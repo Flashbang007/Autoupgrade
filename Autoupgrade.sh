@@ -1,12 +1,14 @@
 #!/bin/bash
 
+PATH=$PATH:/opt/OpenPrinting-Gutenprint/sbin:/opt/OpenPrinting-Gutenprint/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/snap/bin:~/bin
+
 ## Create Log? [0=no , 1=yes]
 LOG=1
-LOGFILE=~/UPGRADE.log
+LOGFILE=/home/flashbang/Data/UPGRADE.log
 # Maximale Logfile Grösse in Bytes? (leer lassen falls unbegrenzt) (512000 bytes = 500      kilobytes = 0.48 megabytes)
-MAXLOGSIZE="256000"
+MAXLOGSIZE="25600"
 # falls MAXLOGSIZE genutzt wird: Logfile rotieren(1) oder löschen(0)?
-LOGROTATE=0
+LOGROTATE=1
 
 # -------------------------------------------------------------- #
 # >>> >> >  DO NOT MESS WiTH ANYTHiNG BELOW THiS LiNE!  < << <<< #
@@ -26,23 +28,22 @@ _LOG() {
             fi
             touch $LOGFILE
         fi
-        echo "[$(date +"%d.%m.%Y %H:%M:%S")]  $1" >> $LOGFILE
+        echo -e "[$(date +"%d.%m.%Y %H:%M:%S")] \n$1" | tee -a $LOGFILE
     fi
 }
 
 apt-get update
-[ ! -z "$LOG" -a "$LOG" == 1 ] && _LOG "$(apt-get upgrade -s)"
-apt-get upgrade -y
-apt-get clean
+[ ! -z "$LOG" -a "$LOG" == 1 ] && _LOG " upgrade \n$(apt-get upgrade -y)"
+[ ! -z "$LOG" -a "$LOG" == 1 ] && _LOG " autoclean \n$(apt-get autoclean)"
+[ ! -z "$LOG" -a "$LOG" == 1 ] && _LOG " clean $(apt-get clean)"
+[ ! -z "$LOG" -a "$LOG" == 1 ] && _LOG " autoremove \n$(apt-get autoremove -y)"
+#apt upgrade -y
+#apt autoclean
+#apt clean
+#apt autoremove -y
 
-ap-get dist-upgrade
-
-CurrentDate=$(date +%b" "%d" "%Y)
-updateDate=$(cat /proc/version | awk {'print $15" "$16" "$19'})
-
-#CurrentDate=$(date -d@$(date +%s) +"%H%d%m%Y")
-#rpiupdateDate=$(date -d@$(stat -c %Z /root/.rpi-firmware/) +"%H%d%m%Y")
-
-[ "$CurrentDate" == "$updateDate" ] && reboot
+if [ -f /var/run/reboot-required ]; then
+        reboot & exit 0
+fi
 
 exit 0
